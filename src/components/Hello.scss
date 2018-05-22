@@ -1,0 +1,11 @@
+.hello {
+    font-size: 50px;
+    color: red;
+    text-shadow: 0 0 10px rgba(0, 9, 9, 0.8)
+}
+.box {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+}

@@ -26,5 +26,5 @@ OfflinePluginRuntime.install({
 
 ReactDOM.render(
     <Calculator />,
-    document.getElementById("App")!
+    document.getElementById("main")!
 );

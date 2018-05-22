@@ -1,18 +1,22 @@
 const path = require('path');
 
+const pathTo = function (path) {
+    return path.resolve(__dirname, path);
+}
+
 module.exports = {
     dev: {
         // Paths
         assetsSubDirectory: 'static',
         assetsPublicPath: '/',
         // Various Dev Server settings
-        host: 'localhost', // can be overwritten by process.env.HOST
+        host: '192.168.60.49', // can be overwritten by process.env.HOST
         port: 8080, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
         autoOpenBrowser: false,
         errorOverlay: true,
         notifyOnErrors: true,
         poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
-
+        proxyTable: {},
         // Use Eslint Loader?
         // If true, your code will be linted during bundling and
         // linting errors and warnings will be shown in the console.
@@ -63,6 +67,23 @@ module.exports = {
         // View the bundle analyzer report after build finishes:
         // `npm run build --report`
         // Set to `true` or `false` to always turn it on or off
-        bundleAnalyzerReport: process.env.npm_config_report
+        bundleAnalyzerReport: process.env.npm_config_report,
+        maxEntrypointSize: 250000
+    },
+    common: {
+        entryPoint: [
+            {
+                filename: path.resolve(__dirname, '../dist/index.html'),
+                template: path.resolve(__dirname, '../template/entry/index.html'),
+                inject: true,
+                chunks: ['app']
+            },
+            {
+                filename: path.resolve(__dirname, '../dist/index.1.html'),
+                template: path.resolve(__dirname, '../template/entry/index.1.html'),
+                inject: true,
+                chunks: ['app2']
+            }
+        ]
     }
 }

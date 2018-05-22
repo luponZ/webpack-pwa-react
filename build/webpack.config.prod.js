@@ -1,19 +1,37 @@
 'use strict'
 const path = require('path');
-const utils = require('./utils');
 const webpack = require('webpack');
-const config = require('../config');
-const baseWebpackConfig = require('./webpack.config.base');
 const merge = require('webpack-merge');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const PrerenderSPAPlugin = require('prerender-spa-plugin');
 const argv = require('yargs').argv;
+const utils = require('./utils');
+const baseWebpackConfig = require('./webpack.config.base');
+const config = require('../config');
 
 const env = require('../config/prod.env');
 const bundleConfig = require("../static/bundle-config.json"); //调入生成的的路径json
+
+const HtmlWebpackPlugins = config.common.entryPoint.map(item => {
+    return new HtmlWebpackPlugin({
+        filename: item.filename,
+        template: item.template,
+        libJsName: bundleConfig.libs.js,
+        inject: item.inject,
+        minify: {
+            removeComments: true,
+            collapseWhitespace: true,
+            removeAttributeQuotes: true
+        },
+        // necessary to consistently work with multiple chunks via CommonsChunkPlugin
+        chunksSortMode: 'dependency',
+        chunks: item.chunks.concat(['default', 'vendor'])
+    })
+})
 
 const webpackConfig = merge(baseWebpackConfig, {
     module: {
@@ -44,13 +62,8 @@ const webpackConfig = merge(baseWebpackConfig, {
             sourceMap: config.prod.productionSourceMap,
             parallel: true
         }),
-        // extract css into its own file
-        new ExtractTextPlugin({
+        new MiniCssExtractPlugin({
             filename: utils.assetsPath('css/[name].[contenthash].css'),
-            // Setting the following option to `false` will not extract CSS from codesplit chunks.
-            // Their CSS will instead be inserted dynamically with style-loader when the codesplit chunk has been loaded by webpack.
-            // It's currently set to `true` because we are seeing that sourcemaps are included in the codesplit bundle as well when it's `false`,
-            // increasing file size: https://github.com/vuejs-templates/webpack/issues/1110
             allChunks: true,
         }),
         // Compress extracted CSS. We are using this plugin so that possible
@@ -65,31 +78,24 @@ const webpackConfig = merge(baseWebpackConfig, {
                 safe: true
             }
         }),
-        // generate dist index.html with correct asset hash for caching.
-        // you can customize output by editing /index.html
-        // see https://github.com/ampedandwired/html-webpack-plugin
-        new HtmlWebpackPlugin({
-            filename: config.prod.index,
-            template: 'index.html',
-            libJsName: bundleConfig.libs.js,
-            inject: true,
-            minify: {
-                removeComments: true,
-                collapseWhitespace: true,
-                removeAttributeQuotes: true
-                // more options:
-                // https://github.com/kangax/html-minifier#options-quick-reference
-            },
-            // necessary to consistently work with multiple chunks via CommonsChunkPlugin
-            chunksSortMode: 'dependency'
-        }),
         // keep module.id stable when vendor modules does not change
         new webpack.HashedModuleIdsPlugin(),
         // enable scope hoisting
         new webpack.optimize.ModuleConcatenationPlugin(),
         // split vendor js into its own file
         new webpack.optimize.SplitChunksPlugin({
+            chunks: "all", // it means all chunks, you can chioce 'initial ', 'async' and 'all', default: 'all'
+            minSize: 20000, // the chunks's max size
+            minChunks: 1, // Maximum number of chunks that is shared
+            maxAsyncRequests: 5, //  Maximum number of parallel requests at on-demand loading
+            maxInitialRequests: 3, // Maximum number of parallel requests at an entrypoint
+            name: true,
             cacheGroups: {
+                default: {
+                    minChunks: 2,
+                    priority: -20,
+                    reuseExistingChunk: true,
+                },
                 vendor: {
                     name: 'vendor',
                     minChunks(module) {
@@ -119,15 +125,31 @@ const webpackConfig = merge(baseWebpackConfig, {
                 }
             }
         }),
-        
+
         // copy custom static assets
         new CopyWebpackPlugin([{
             from: path.resolve(__dirname, '../static'),
             to: config.prod.assetsSubDirectory,
             ignore: ['.*']
-        }])
-    ]
+        }]),
+        // prerender page when you open it first
+        new PrerenderSPAPlugin({
+            // Required - The path to the webpack-outputted app to prerender.
+            staticDir: path.join(__dirname, '../dist'),
+            // Required - Routes to render.
+            routes: ['/'],
+        })
+    ],
+    performance: {
+        hints: 'error',
+        maxEntrypointSize: config.prod.maxEntrypointSize,
+        assetFilter: function (assetFilename) {
+            return assetFilename.endsWith('.js');
+        }
+    }
 })
+
+webpackConfig.plugins = webpackConfig.plugins.concat(HtmlWebpackPlugins);
 
 if (config.prod.productionGzip) {
     const CompressionWebpackPlugin = require('compression-webpack-plugin')

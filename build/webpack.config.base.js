@@ -3,17 +3,21 @@ const webpack = require('webpack');
 const path = require('path');
 const {
     CheckerPlugin
-} = require('awesome-typescript-loader')
+} = require('awesome-typescript-loader');
+const argv = require('yargs').argv;
+const OfflinePlugin = require('offline-plugin');
 const config = require('../config');
 const utils = require('./utils');
-const argv = require('yargs').argv;
+const bundleConfig = require("../static/bundle-config.json"); //调入生成的的路径json
 
 const resolve = dir => { return path.join(__dirname, '..', dir) };
 
 module.exports = {
+    // context is useful for config of entry and loader
     context: path.resolve(__dirname, '../'),
     entry: {
-        'app': './src/main.tsx'
+        'app': './src/main.tsx',
+        'app2': './src/main.1.tsx'
     },
     output: {
         path: config.prod.assetsRoot,
@@ -27,6 +31,14 @@ module.exports = {
             manifest: require('../static/libs-mainfest.json') // 指向生成的manifest.json
         }),
         // new CheckerPlugin()
+        new OfflinePlugin({
+            externals: argv.env.NODE_ENV === 'production' ?
+                [`${config.prod.assetsPublicPath}static/${bundleConfig.libs.js}`, './index.html'] :
+                [`${config.dev.assetsPublicPath}static/${bundleConfig.libs.js}`, './index.html'],
+            ServiceWorker: {
+                events: true
+            }
+        })
     ],
     resolve: {
         extensions: ['.js', '.ts', '.tsx', '.json'],
@@ -34,10 +46,6 @@ module.exports = {
             '@': resolve('src')
         }
     },
-    // externals: {
-    //     "react": "React",
-    //     "react-dom": "ReactDOM"
-    // },
     mode: argv.env.NODE_ENV,
     module: {
         rules: [
