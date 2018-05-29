@@ -1,7 +1,7 @@
 const path = require('path');
 
-const pathTo = function (path) {
-    return path.resolve(__dirname, path);
+const pathTo = function (src) {
+    return path.resolve(__dirname, src);
 }
 
 module.exports = {
@@ -71,16 +71,26 @@ module.exports = {
         maxEntrypointSize: 250000
     },
     common: {
+        // multi or single
+        // put html in template while select multi
+        // put index.html in root while select single
+        mode: 'multi',
         entryPoint: [
             {
-                filename: path.resolve(__dirname, '../dist/index.html'),
-                template: path.resolve(__dirname, '../template/entry/index.html'),
+                filename: pathTo('../dist/main.html'),
+                template: pathTo('../template/index.html'),
                 inject: true,
                 chunks: ['app']
             },
             {
-                filename: path.resolve(__dirname, '../dist/index.1.html'),
-                template: path.resolve(__dirname, '../template/entry/index.1.html'),
+                filename: pathTo('../dist/index.html'),
+                template: pathTo('../template/entry/index.html'),
+                inject: true,
+                chunks: ['app']
+            },
+            {
+                filename: pathTo('../dist/index.1.html'),
+                template: pathTo('../template/entry/index.1.html'),
                 inject: true,
                 chunks: ['app2']
             }

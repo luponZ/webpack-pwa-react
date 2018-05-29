@@ -2,7 +2,8 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as OfflinePluginRuntime from 'offline-plugin/runtime';
 
-import { Calculator } from './view/Calculate';
+// import { Calculator } from './view/Calculate';
+import { App } from './view/contextDemo'
 
 OfflinePluginRuntime.install({
     onUpdating: () => {
@@ -25,6 +26,6 @@ OfflinePluginRuntime.install({
 });
 
 ReactDOM.render(
-    <Calculator />,
+    <App />,
     document.getElementById("App")!
 );
